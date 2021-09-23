@@ -1,0 +1,117 @@
+-- WEDNESDAY HW QUESTIONS 9/22/2021 --
+-- 1. List all customers who live in Texas (use JOINs)
+SELECT first_name, last_name, district
+FROM customer
+JOIN address
+ON customer.address_id = address.address_id
+WHERE district LIKE 'Texas';
+-- answer: Jennifer Davis, Kim Cruz, Richard Mccrary, Bryan Hardison and Ian Still
+
+-- 2. Get all payments above $6.99 with the Customer's FullName
+SELECT first_name, last_name, payment_id, amount
+FROM customer
+JOIN payment
+ON customer.customer_id = payment.customer_id
+WHERE amount > 6.99;
+--answer: there are 1,410 payments over 6.99 
+
+SELECT *
+FROM payment;
+
+SELECT *
+FROM customer;
+
+-- 3. Show all customers names who have made payments over $175(use subqueries)
+SELECT first_name, last_name
+FROM customer
+WHERE customer_id IN (
+	SELECT customer_id
+	FROM payment
+	GROUP BY customer_id
+	HAVING SUM(amount) > 175
+	ORDER BY SUM(amount) DESC
+
+);
+-- answer: Rhonda Kennedy, Clara Shaw, Eleanor Hunt, Marion Snyder, Patrick Newsom, Francis Sikes, Tommy Collazo, Karl Seal,
+-- Lance pemberton, Ken Prewitt, Morris Mccarter
+
+
+-- 4. List all customers that live in Nepal (use the city table)
+SELECT first_name, last_name, city, country
+FROM customer
+JOIN address
+ON customer.address_id = address.address_id
+JOIN city
+ON address.city_id = city.city_id
+JOIN country
+ON country.country_id = city.country_id
+WHERE city LIKE 'Nepal';
+--answer: No one
+
+SELECT *
+FROM customer;
+
+SELECT * 
+FROM city
+WHERE city LIKE 'N%'
+
+SELECT *
+FROM country;
+
+-- 5. Which staff member had the most transactions?
+SELECT staff.first_name, staff.last_name, COUNT(payment.payment_id)
+FROM payment
+JOIN staff
+ON staff.staff_id = payment.staff_id
+GROUP BY staff.staff_id;
+-- answer: Jon Stephans 7304
+
+
+
+--6. How many movies of each rating are there?
+SELECT rating, COUNT(rating)
+FROM film
+GROUP BY rating;
+--answer: R-195 NC17-210 G-178 PG-194 PG13-223
+
+--7. Show all customers who have made a single payment above $6.99 (Use Subqueries)
+SELECT first_name, last_name
+FROM customer
+WHERE customer_id IN (
+	SELECT customer_id
+	FROM payment
+	WHERE amount > 6.99
+);
+--answer: 539 customers
+
+
+--8. How many free rentals did our stores give away?
+SELECT COUNT(amount)
+FROM payment
+WHERE amount = 0.00;
+-- answer: 24
+
+SELECT *
+FROM store;
+-- from amount of rentals from each store: 
+CREATE OR REPLACE FUNCTION free_rentals(
+	_store_id INTEGER
+)
+RETURNS INTEGER
+AS $$
+BEGIN
+	RETURN(
+		SELECT COUNT(payment.payment_id)
+		FROM store
+		JOIN payment
+		ON store.manager_staff_id = payment.staff_id
+		WHERE store_id = _store_id AND payment.amount = 0.00
+		GROUP BY store_id
+	);
+END;
+$$
+LANGUAGE plpgsql
+
+SELECT free_rentals(1)
+SELECT free_rentals(2)
+--answer: store 1=15 store 2=9
